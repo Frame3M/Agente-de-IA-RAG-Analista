@@ -1,0 +1,9 @@
+#Virtual env
+venv/
+
+#Claves de entorno
+.env
+
+#Notebook de pruebas
+sandbox_notebook.ipynb
+
