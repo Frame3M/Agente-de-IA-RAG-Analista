@@ -110,6 +110,15 @@ def build_agent():
 
 ################################################################################################################
 
-agente = build_agent()
+def run_agent(question: str) -> str:
+    agent = build_agent()
 
-respuesta = agente.invoke({'input': "Cuales son las conduciones para aceptar una devolucion?"})
+    output_dict = agent.invoke({'input': question})
+
+    final_answer = output_dict["output"]
+
+    return final_answer
+
+################################################################################################################
+
+print(run_agent("Cuales son las conduciones para aceptar una devolucion?"))
