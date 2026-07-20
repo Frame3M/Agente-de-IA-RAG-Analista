@@ -12,75 +12,104 @@ from herramientas import crear_herramientas
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-llm_model = ChatGoogleGenerativeAI(
-    model= "gemini-3.1-flash-lite",
-    temperature= 0,
-    google_api_key= GEMINI_API_KEY
-
-)
-
-embedding_model = GoogleGenerativeAIEmbeddings(
-    model= 'gemini-embedding-001',
-    api_key= GEMINI_API_KEY
-)
-
-splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap= 100)
+_VECTORSTORE_IN_MEMORY = None
 
 ################################################################################################################
 
-pdf_loader = DirectoryLoader(
-    path= Path("sandbox_files"),
-    glob= "*.pdf",
-    loader_cls= PyPDFLoader
-)
+def _get_gemini_api_key() -> str | None:
+    return os.getenv("GEMINI_API_KEY")
 
-pdf_docs = pdf_loader.load()
 
-chunks = splitter.split_documents(pdf_docs)
+def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, rebuild: bool = False):
+    global _VECTORSTORE_IN_MEMORY
 
-vectorstore = FAISS.from_documents(documents= chunks, embedding= embedding_model)
+    if _VECTORSTORE_IN_MEMORY is not None and not rebuild:
+        return _VECTORSTORE_IN_MEMORY
+    
+    pdf_loader = DirectoryLoader(
+        path= Path("sandbox_files"),
+        glob= "*.pdf",
+        loader_cls= PyPDFLoader
+    )
+
+    pdf_docs = pdf_loader.load()
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap= 100
+    )
+
+    chunks = splitter.split_documents(pdf_docs)
+
+    vectorstore = FAISS.from_documents(documents= chunks, embedding= embedding_model)
+
+    return vectorstore
+
 
 ################################################################################################################
 
-tools = crear_herramientas(vectorstore)
+def build_agent():
 
-fecha_actual = datetime.now().strftime("%B %Y")
+    gemini_api_key = _get_gemini_api_key()
+    llm_model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+    embedding_model_name = os.getenv("EMBEDDING_GEMINI_MODEL", "gemini-embedding-001")
 
-template_prompt =   """
-                    Eres un asistente analítico y experto en E-commerce que responde en castellano. 
-                    Tu objetivo es responder las dudas del usuario con la mayor precisión posible.
+    llm_model = ChatGoogleGenerativeAI(
+        model= llm_model_name,
+        temperature= 0,
+        google_api_key= gemini_api_key,
+        max_retries=0
+    )
 
-                    NOTA IMPORTANTE: La fecha actual es {fecha_actual} asi que si necesitas responder preguntas
-                    basadas en el tiempo debes tener en cuenta esto.
+    embedding_model = GoogleGenerativeAIEmbeddings(
+        model= embedding_model_name,
+        api_key= gemini_api_key
+    )
 
-                    Para responder la pregunta del usuario, tienes acceso a las siguientes herramientas:
+    vectorstore = _build_or_load_vectorstore(embedding_model= embedding_model, rebuild= False)
 
-                    {tools}
+    tools = crear_herramientas(vectorstore)
+    fecha_actual = datetime.now().strftime("%B %Y")
 
-                    Usa el siguiente formato de manera obligatoria y estricta:
-                    Question: La pregunta de entrada que debes responder.
-                    Thought: Debes siempre pensar en lo que debes hacer.
-                    Action: La acción que será ejecutada, debe ser una de las siguientes opciones exactas: [{tool_names}]
-                    Action Input: La entrada exacta para la acción.
-                    Observation: El resultado devuelto por la herramienta.
-                    ... (este ciclo se puede repetir)
-                    Thought: Ahora sé la respuesta final.
-                    Final Answer: La respuesta final redactada de forma amigable en castellano.
+    template_prompt =   """
+                        Eres un asistente analítico y experto en E-commerce que responde en castellano. 
+                        Tu objetivo es responder las dudas del usuario con la mayor precisión posible.
 
-                    ¡Comienza!
-                    Question: {input}
-                    Thought: {agent_scratchpad}
-                    """
+                        NOTA IMPORTANTE: La fecha actual es {fecha_actual} asi que si necesitas responder preguntas
+                        basadas en el tiempo debes tener en cuenta esto.
 
-prompt_react = PromptTemplate(
-    input_variables= ['input', 'agent_scratchpad', 'tools', 'tool_names'],
-    partial_variables= {'fecha_actual': fecha_actual},
-    template= template_prompt
-)
+                        Para responder la pregunta del usuario, tienes acceso a las siguientes herramientas:
 
-agente = create_react_agent(llm= llm_model, tools= tools, prompt= prompt_react)
-orquestador = AgentExecutor(agent= agente, tools= tools, verbose= True, handle_parsing_errors= True)
+                        {tools}
 
-respuesta = orquestador.invoke({'input': "Cuales son las conduciones para aceptar una devolucion?"})
+                        Usa el siguiente formato de manera obligatoria y estricta:
+                        Question: La pregunta de entrada que debes responder.
+                        Thought: Debes siempre pensar en lo que debes hacer.
+                        Action: La acción que será ejecutada, debe ser una de las siguientes opciones exactas: [{tool_names}]
+                        Action Input: La entrada exacta para la acción.
+                        Observation: El resultado devuelto por la herramienta.
+                        ... (este ciclo se puede repetir)
+                        Thought: Ahora sé la respuesta final.
+                        Final Answer: La respuesta final redactada de forma amigable en castellano.
+
+                        ¡Comienza!
+                        Question: {input}
+                        Thought: {agent_scratchpad}
+                        """
+
+    prompt_react = PromptTemplate(
+        input_variables= ['input', 'agent_scratchpad', 'tools', 'tool_names'],
+        partial_variables= {'fecha_actual': fecha_actual},
+        template= template_prompt
+    )
+
+    agente = create_react_agent(llm= llm_model, tools= tools, prompt= prompt_react)
+    orquestador = AgentExecutor(agent= agente, tools= tools, verbose= True, handle_parsing_errors= True)
+
+    return orquestador
+
+################################################################################################################
+
+agente = build_agent()
+
+respuesta = agente.invoke({'input': "Cuales son las conduciones para aceptar una devolucion?"})
