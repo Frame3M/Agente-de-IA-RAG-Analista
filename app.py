@@ -12,8 +12,6 @@ from herramientas import crear_herramientas
 
 load_dotenv()
 
-_VECTORSTORE_IN_MEMORY = None
-
 ################################################################################################################
 
 def _get_gemini_api_key() -> str | None:
@@ -21,10 +19,16 @@ def _get_gemini_api_key() -> str | None:
 
 
 def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, rebuild: bool = False):
-    global _VECTORSTORE_IN_MEMORY
 
-    if _VECTORSTORE_IN_MEMORY is not None and not rebuild:
-        return _VECTORSTORE_IN_MEMORY
+    index_dir = "faiss_index"
+
+    if os.path.exists(index_dir) and not rebuild:
+        
+        return FAISS.load_local(
+            folder_path= index_dir,
+            embeddings= embedding_model,
+            allow_dangerous_deserialization= True
+        )
     
     pdf_loader = DirectoryLoader(
         path= Path("sandbox_files"),
@@ -42,6 +46,7 @@ def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, re
     chunks = splitter.split_documents(pdf_docs)
 
     vectorstore = FAISS.from_documents(documents= chunks, embedding= embedding_model)
+    vectorstore.save_local(index_dir)
 
     return vectorstore
 
@@ -104,7 +109,7 @@ def build_agent():
     )
 
     agente = create_react_agent(llm= llm_model, tools= tools, prompt= prompt_react)
-    orquestador = AgentExecutor(agent= agente, tools= tools, verbose= True, handle_parsing_errors= True)
+    orquestador = AgentExecutor(agent= agente, tools= tools, verbose= False, handle_parsing_errors= True)
 
     return orquestador
 

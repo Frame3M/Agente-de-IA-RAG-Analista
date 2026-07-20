@@ -12,3 +12,6 @@ sandbox_notebook.ipynb
 
 #Carpeta de archivos de prueba
 sandbox_files/
+
+#Vectorstore local
+faiss_index/
