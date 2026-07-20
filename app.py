@@ -121,4 +121,32 @@ def run_agent(question: str) -> str:
 
 ################################################################################################################
 
-print(run_agent("Cuales son las conduciones para aceptar una devolucion?"))
+def main() -> None:
+
+    #print(run_agent("Cuales son las conduciones para aceptar una devolucion?"))
+
+    question = input("Ingresa una pregunta: ").strip().lower()
+
+    if question != 'exit':
+        result = run_agent(question)
+        print("=" * 50)
+        print(result)
+        print("=" * 50)
+
+    while True:
+        question = input("Ingresa una pregunta: ").strip().lower()
+
+        if question == 'exit':
+            break
+
+        result = run_agent(question)
+        print("=" * 50)
+        print(result)
+        print("=" * 50)
+
+    return
+
+################################################################################################################
+
+if __name__ == "__main__":
+    main()
