@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import streamlit as st
-from app import PROJECT_ROOT
+from app import PROJECT_ROOT, build_agent
 
 DEFAULT_TEMPFILES_DIR = PROJECT_ROOT / "temp_files"
 
@@ -24,16 +24,22 @@ def save_file(uploadedfile, destination_path: Path) -> Path:
     with open(file_path, "wb") as f:
         f.write(uploadedfile.getbuffer())
 
+@st.cache_resource
+def get_agent():
+    return build_agent(rebuild_index=False)
+
+def reset_chat() -> None:
+    st.session_state.messages = []
+    st.session_state.agent_blocked = False
+
 ################################################################################################################
 
 def main() -> None:
-    st.set_page_config(page_title="Agente IA e-commerce", layout="centered")
+
+    st.set_page_config(page_title="Agente IA e-commerce", layout="wide")
 
     st.title("Agente de IA para E-commerce")
     st.caption("Consulta documentos internos (RAG) y WEB")
-
-
-    pregunta = st.chat_input("Haz una pregunta sobre e-commerce...")
 
     with st.sidebar:
         st.header("Configuracion")
@@ -41,7 +47,8 @@ def main() -> None:
         st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env ")
 
         if st.button("Limpiar chat"):
-            pass
+            reset_chat()
+            st.rerun()
 
         st.markdown("---")
 
@@ -58,7 +65,12 @@ def main() -> None:
         uploaded_files = st.file_uploader(label='' ,type=["pdf"], accept_multiple_files=True)
         submitted = st.button("Construir indice")
 
+        st.markdown("---")
+
+        st.header("Avisos")
+
         if uploaded_files and submitted:
+            new_files = False
             unique_files = {}
 
             for file in uploaded_files:
@@ -74,10 +86,23 @@ def main() -> None:
                 if not file_path.exists():
                     save_file(file, pdf_dir)
                     st.success(f"Guardado '{file.name}.'")
+                    new_files = True
 
                 else:
                     st.info(f"'{file.name}' ya existia en el sistema.")
 
+            if new_files:
+                with st.spinner("Construyendo indice..."):
+                    build_agent(rebuild_index=True)
+                st.cache_resource.clear()
+                st.rerun()
+
+            else:
+                st.warning(f"No se agrego ningun archivo nuevo")
+
+    ######################################################################################
+
+    pregunta = st.chat_input("Haz una pregunta sobre e-commerce...")
 
 if __name__ == "__main__":
     main()
