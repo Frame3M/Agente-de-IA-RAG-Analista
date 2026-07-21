@@ -10,6 +10,10 @@ from datetime import datetime
 from langchain_classic.agents import AgentExecutor, create_react_agent
 from herramientas import crear_herramientas
 
+PROJECT_ROOT = Path(__file__).resolve().parent
+DEFAULT_PDF_DIR = PROJECT_ROOT / "sandbox_files"
+DEFAULT_INDEX_DIR = PROJECT_ROOT / "data" / "faiss_index"
+
 load_dotenv()
 
 ################################################################################################################
@@ -17,12 +21,57 @@ load_dotenv()
 def _get_gemini_api_key() -> str | None:
     return os.getenv("GEMINI_API_KEY")
 
+def _load_pdfs(pdf_dir: Path):
+
+    pdf_files = sorted(pdf_dir.glob("*.pdf"))
+
+    if not pdf_files:
+        raise RuntimeError(f"No se encontraron archivos PDF en {pdf_dir}")
+    
+    docs = []
+
+    for pdf in pdf_files:
+        loader = PyPDFLoader(file_path= str(pdf))
+        docs.extend(loader.load())
+
+    return docs
+
+def _get_index_dir() -> Path:
+
+    configured = os.getenv("FAISS_INDEX_DIR")
+
+    index_dir = Path(configured) if configured else DEFAULT_INDEX_DIR
+
+    if not index_dir.is_absolute():
+        
+        index_dir = (PROJECT_ROOT / index_dir).resolve()
+
+    return index_dir
+
+def _get_pdfs_dir() -> Path:
+
+    configured = os.getenv("PDFS_DIR")
+
+    pdfs_dir = Path(configured) if configured else DEFAULT_PDF_DIR
+
+    if not pdfs_dir.is_absolute():
+
+        pdfs_dir = (PROJECT_ROOT / pdfs_dir).resolve()
+
+    if not pdfs_dir.exists():
+
+        raise FileNotFoundError(f"No existe la carpeta para archivos pdf: {pdfs_dir}")
+    
+    return pdfs_dir
+
 
 def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, rebuild: bool = False):
 
-    index_dir = "faiss_index"
+    index_dir = _get_index_dir()
+    index_faiss = index_dir / "index.faiss"
+    index_pkl = index_dir / "index.pkl"
 
-    if os.path.exists(index_dir) and not rebuild:
+    if not rebuild and index_faiss.exists() and index_pkl.exists():
         
         return FAISS.load_local(
             folder_path= index_dir,
@@ -30,13 +79,10 @@ def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, re
             allow_dangerous_deserialization= True
         )
     
-    pdf_loader = DirectoryLoader(
-        path= Path("sandbox_files"),
-        glob= "*.pdf",
-        loader_cls= PyPDFLoader
-    )
-
-    pdf_docs = pdf_loader.load()
+    print("Reconstruyendo Vectorstore...\n")
+    
+    pdfs_dir = _get_pdfs_dir()
+    pdf_docs = _load_pdfs(pdfs_dir)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -53,7 +99,7 @@ def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, re
 
 ################################################################################################################
 
-def build_agent():
+def build_agent(rebuild_index: bool = False):
 
     gemini_api_key = _get_gemini_api_key()
     llm_model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
@@ -71,7 +117,7 @@ def build_agent():
         api_key= gemini_api_key
     )
 
-    vectorstore = _build_or_load_vectorstore(embedding_model= embedding_model, rebuild= False)
+    vectorstore = _build_or_load_vectorstore(embedding_model= embedding_model, rebuild= rebuild_index)
 
     tools = crear_herramientas(vectorstore)
     fecha_actual = datetime.now().strftime("%B %Y")
@@ -116,7 +162,7 @@ def build_agent():
 ################################################################################################################
 
 def run_agent(question: str) -> str:
-    agent = build_agent()
+    agent = build_agent(rebuild_index= False)
 
     output_dict = agent.invoke({'input': question})
 

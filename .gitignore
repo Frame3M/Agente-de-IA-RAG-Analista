@@ -15,3 +15,4 @@ sandbox_files/
 
 #Vectorstore local
 faiss_index/
+data/
