@@ -28,6 +28,10 @@ def save_file(uploadedfile, destination_path: Path) -> Path:
 def get_agent():
     return build_agent(rebuild_index=False)
 
+def run_cache_agent(agent, question: str) -> str:
+    output_dict = agent.invoke({'input': question})
+    return output_dict["output"]
+
 def reset_chat() -> None:
     st.session_state.messages = []
     st.session_state.agent_blocked = False
@@ -101,8 +105,44 @@ def main() -> None:
                 st.warning(f"No se agrego ningun archivo nuevo")
 
     ######################################################################################
+    
+    # Variable de sesion de historial de chat
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    pregunta = st.chat_input("Haz una pregunta sobre e-commerce...")
+    # Mostrar historial de chat
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Haz una pregunta sobre e-commerce..."):
+        
+        # Mostrar nuevo mensaje en pantalla
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Agregar nuevo mensaje en historial
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+
+        with st.chat_message("ai"):
+            with st.spinner("Pensando..."):
+                try:
+                    # Generar respuesta IA
+                    agent = get_agent()
+                    result = run_cache_agent(agent, question= prompt)
+                    st.markdown(result)
+
+                    # Agregar respuesta en el historial
+                    st.session_state.messages.append({"role": "assistant", "content": result})
+
+                except Exception as exc:
+                    # Mostrar error ocurrido en la generacion de respuesta
+                    error_msg = f"Error ejecutando el agente: {exc}"
+                    st.error(error_msg)
+
+                    # Guardar mensaje de error en el historial de chat
+                    st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
 if __name__ == "__main__":
     main()
