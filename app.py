@@ -155,7 +155,7 @@ def build_agent(rebuild_index: bool = False):
     )
 
     agente = create_react_agent(llm= llm_model, tools= tools, prompt= prompt_react)
-    orquestador = AgentExecutor(agent= agente, tools= tools, verbose= False, handle_parsing_errors= True)
+    orquestador = AgentExecutor(agent= agente, tools= tools, verbose= False, handle_parsing_errors= True, return_intermediate_steps= True)
 
     return orquestador
 

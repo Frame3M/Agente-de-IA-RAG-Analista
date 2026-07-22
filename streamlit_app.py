@@ -28,22 +28,52 @@ def save_file(uploadedfile, destination_path: Path) -> Path:
 def get_agent():
     return build_agent(rebuild_index=False)
 
-def run_cache_agent(agent, question: str) -> str:
-    output_dict = agent.invoke({'input': question})
-    return output_dict["output"]
-
 def reset_chat() -> None:
     st.session_state.messages = []
     st.session_state.agent_blocked = False
+
+def extract_tools_used(intermediate_steps) -> str:
+    if not intermediate_steps:
+        return "Conocimiento general (LLM)"
+    
+    # Extraemos los nombres de todas las herramientas ejecutadas en la consulta
+    tools_used = set(action.tool for action, _ in intermediate_steps)
+    
+    # Mapeamos los nombres de las herramientas
+    tools = []
+    for tool_name in tools_used:
+        if "rag" in tool_name.lower() or "pdf" in tool_name.lower() or "vector" in tool_name.lower():
+            tools.append("RAG")
+        elif "search" in tool_name.lower() or "web" in tool_name.lower() or "google" in tool_name.lower():
+            tools.append("WEB")
+        else:
+            tools.append(tool_name) # Nombre por defecto si es otra herramienta
+    
+    # Se devuelve una unica cadena con todas las herramientas
+    return ", ".join(tools)
+
+def run_cache_agent(agent, question: str) -> str:
+    output_dict = agent.invoke({'input': question})
+
+    response = output_dict["output"]
+    steps = output_dict.get("intermediate_steps", [])
+
+    tools = extract_tools_used(steps)
+
+    return {
+        "response": response,
+        "tools": tools
+    }
 
 ################################################################################################################
 
 def main() -> None:
 
-    st.set_page_config(page_title="Agente IA e-commerce", layout="wide")
+    st.set_page_config(page_title="Agente IA e-commerce", layout="centered")
 
     st.title("Agente de IA para E-commerce")
     st.caption("Consulta documentos internos (RAG) y WEB")
+    st.markdown("---")
 
     with st.sidebar:
         st.header("Configuracion")
@@ -113,7 +143,13 @@ def main() -> None:
     # Mostrar historial de chat
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+
+            if message["role"] == "assistant" and "tools_used" in message:
+                st.success(f"*Herramientas utilizadas*: **{message['tools_used']}**")
+                st.markdown(message['content'])
+
+            else:
+                st.markdown(message['content'])
 
     if prompt := st.chat_input("Haz una pregunta sobre e-commerce..."):
         
@@ -131,10 +167,19 @@ def main() -> None:
                     # Generar respuesta IA
                     agent = get_agent()
                     result = run_cache_agent(agent, question= prompt)
-                    st.markdown(result)
+
+                    tools_used = result.get("tools", "N/D") # Herramientas usadas para responder
+                    response = result.get("response", "") # Respuesta final generada
+                    
+                    st.success(f"*Herramientas utilizadas*: **{tools_used}**")
+                    st.markdown(response)
 
                     # Agregar respuesta en el historial
-                    st.session_state.messages.append({"role": "assistant", "content": result})
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "tools_used": tools_used,
+                        "content": response
+                    })
 
                 except Exception as exc:
                     # Mostrar error ocurrido en la generacion de respuesta
@@ -143,6 +188,8 @@ def main() -> None:
 
                     # Guardar mensaje de error en el historial de chat
                     st.session_state.messages.append({"role": "assistant", "content": error_msg})
+
+                    
 
 if __name__ == "__main__":
     main()
