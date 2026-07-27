@@ -141,24 +141,38 @@ def main() -> None:
 
         with st.container():
 
-            top = st.container(horizontal=True, vertical_alignment="center")
-            
-            top.header("Documentos")
-
             #########################
             
             pdf_dir = _get_pdfs_dir()
 
             #########################
 
-            if top.button(r"$\textsf{\small ➕}$", key="open_uploader_menu", type="primary"):
-                upload_files_menu(pdf_dir)
+            top = st.container(horizontal=True, vertical_alignment="center")
+
+            with top:
+                st.header("Documentos")
+
+                if st.button(r"$\textsf{\small ➕}$", key="open_uploader_menu", type="primary"):
+                    upload_files_menu(pdf_dir)
+
+            if pdf_dir.exists():
+                temp_files = list(pdf_dir.glob("*.pdf"))
+
+                if temp_files:
+                    for file in temp_files:
+                        st.caption(f"📄 {file.name}")
+
+                else:
+                    st.caption("No hay archivos pendientes en la carpeta temporal")
+
+            else:
+                st.caption("La carpeta temporal no existe o esta vacia.")
+            
 
         ######################################################################################
 
         st.markdown("---")
 
-        st.header("Avisos")
 
     ######################################################################################
     
