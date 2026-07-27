@@ -97,41 +97,47 @@ def upload_files_menu(pdf_dir):
 
         col_left, col_center, col_right = st.columns([1,2,1])
         with col_center:
-            submitted = st.form_submit_button("Construir indice", use_container_width=True)
+            submitted = st.form_submit_button("Guardar y construir indice", use_container_width=True)
 
-        if uploaded_files and submitted:
+        if submitted:
 
             st.markdown("---")
-            
-            new_files = False
-            unique_files = {}
 
-            for file in uploaded_files:
-                if file.name not in unique_files:
-                    unique_files[file.name] = file
-                else:
-                    st.warning(f"El archivo '{file.name}' se econtraba duplicado en la seccion y fue ignorado.")
-
-            for file in unique_files.values():
+            if uploaded_files:
                 
-                file_path = pdf_dir / file.name
-                
-                if not file_path.exists():
-                    save_file(file, pdf_dir)
-                    st.success(f"Guardado '{file.name}.'")
-                    new_files = True
+                new_files = False
+                unique_files = {}
+
+                for file in uploaded_files:
+                    if file.name not in unique_files:
+                        unique_files[file.name] = file
+                    else:
+                        st.warning(f"El archivo '{file.name}' se econtraba duplicado en la seccion y fue ignorado.")
+
+                for file in unique_files.values():
+                    
+                    file_path = pdf_dir / file.name
+                    
+                    if not file_path.exists():
+                        save_file(file, pdf_dir)
+                        st.success(f"Guardado '{file.name}.'")
+                        new_files = True
+
+                    else:
+                        st.info(f"'{file.name}' ya existia en el sistema.")
+
+                if new_files:
+                    with st.spinner("Construyendo indice..."):
+                        build_agent(rebuild_index=True)
+                    st.cache_resource.clear()
+                    st.rerun()
 
                 else:
-                    st.info(f"'{file.name}' ya existia en el sistema.")
-
-            if new_files:
-                with st.spinner("Construyendo indice..."):
-                    build_agent(rebuild_index=True)
-                st.cache_resource.clear()
-                st.rerun()
+                    st.warning(f"No se agrego ningun archivo nuevo")
 
             else:
-                st.warning(f"No se agrego ningun archivo nuevo")
+                st.error("No agrego ningun archivo")
+
 
 ################################################################################################################
 
