@@ -5,6 +5,23 @@ from app import PROJECT_ROOT, build_agent
 
 DEFAULT_TEMPFILES_DIR = PROJECT_ROOT / "temp_files"
 
+####################################################
+
+def sync_secrets() -> None:
+    try:
+        secrets_dict = dict(st.secrets)
+    except Exception:
+        return
+
+    for key in ["GEMINI_API_KEY", "LLM_GEMINI_MODEL", "EMBEDDING_GEMINI_MODEL"]:
+        value = secrets_dict.get(key)
+        if value and not os.getenv(key):
+            os.environ[key] = str(value)
+
+sync_secrets()
+
+####################################################
+
 def _get_pdfs_dir() -> Path:
 
     configured = os.getenv("PDF_DIR")

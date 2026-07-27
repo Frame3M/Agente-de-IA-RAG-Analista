@@ -17,3 +17,6 @@ sandbox_files/
 faiss_index/
 data/
 temp_files/
+
+#Secrets streamlit
+.streamlit/
