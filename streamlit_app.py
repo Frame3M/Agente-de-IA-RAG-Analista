@@ -145,19 +145,23 @@ def main() -> None:
 
     st.set_page_config(page_title="Agente IA e-commerce", layout="centered")
 
-    st.title("Agente de IA para E-commerce")
-    st.caption("Consulta documentos internos (RAG) y WEB")
+    st.title("Agente de IA para E-commerce 💸")
+    st.caption("Consulta documentos internos (RAG) y WEB 🗪")
     st.markdown("---")
 
     with st.sidebar:
+        
+        with st.container():
 
-        st.title("Configuracion")
+            st.title("🧠 Descripcion")
 
-        st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env")
+            st.markdown("""Asistente inteligente con acceso a **documentacion interna** (RAG) y busqueda 
+                        web en tiempo real para responder tus consultas.""")
 
-        ######################################################################################
+            st.info("Asegurate de tener correctamente configuradas las variables de entorno en tu archivo .env")
 
-        st.markdown("---")
+
+        st.divider() ################################################################################################################
 
         with st.container():
 
@@ -173,11 +177,9 @@ def main() -> None:
             with top:
                 st.title("📄 Documentos")
 
-                if st.button("➕", key="open_uploader_menu", type="primary"):
+                if st.button(r"**$\textsf{\large +}$**", key="open_uploader_menu", type="primary"):
                     upload_files_menu(pdf_dir)
 
-        
-        
             # Seccion lista documento
             if pdf_dir.exists():
 
@@ -210,7 +212,7 @@ def main() -> None:
                                         font-size: 13px;
                                     " title="{file.name}">
                                         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            <b>{index}.</b> {file.name}
+                                            <b>{index}. </b> {file.name}
                                         </span>
                                     </div>
                                     """,
@@ -232,17 +234,15 @@ def main() -> None:
                                 st.rerun()
 
                 else:
-                    st.caption("No hay archivos pendientes en la carpeta temporal")
+                    st.caption("No hay archivos cargados en la base de conocimiento")
 
             else:
-                st.caption("La carpeta temporal no existe o esta vacia.")
+                st.warning("La carpeta temporal no existe o esta vacia.")
             
 
-        ######################################################################################
+        st.divider() ######################################################################################
 
-        st.markdown("---")
-
-        with st.container(horizontal_alignment="center"):
+        with st.container():
         
             if st.button("Reiniciar conversacion", use_container_width=True, type="primary"):
                 reset_chat()
@@ -266,7 +266,7 @@ def main() -> None:
             else:
                 st.markdown(message['content'])
 
-    if prompt := st.chat_input("Haz una pregunta sobre e-commerce..."):
+    if prompt := st.chat_input("Haz una pregunta sobre e-commerce... 💬"):
         
         # Mostrar nuevo mensaje en pantalla
         with st.chat_message("user"):
