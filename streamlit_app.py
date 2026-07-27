@@ -153,7 +153,7 @@ def main() -> None:
 
         st.title("Configuracion")
 
-        st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env ")
+        st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env")
 
         ######################################################################################
 
@@ -171,27 +171,53 @@ def main() -> None:
 
             # Titulo y boton para añadir documentos
             with top:
-                st.title("Documentos")
+                st.title("📄 Documentos")
 
                 if st.button("➕", key="open_uploader_menu", type="primary"):
                     upload_files_menu(pdf_dir)
 
-            sub = st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute")
+        
+        
+            # Seccion lista documento
+            if pdf_dir.exists():
 
-            # Seccion lista documentos
-            with sub:
+                temp_files = sorted(pdf_dir.glob("*.pdf"))
 
-                if pdf_dir.exists():
+                if temp_files:
+                    
+                    for index, file in enumerate(temp_files, start=1):
+                        
+                        sub = st.container(horizontal=True, vertical_alignment="center")
 
-                    temp_files = sorted(pdf_dir.glob("*.pdf"))
+                        with sub:
 
-                    if temp_files:
+                            # Container para nombre
+                            file_name_cont = st.container(horizontal=False, border=False, height=49, horizontal_alignment="right")
+                            # Nombre de archivo contraible
+                            file_name_cont.markdown(
+                                    f"""
+                                    <div style="
+                                        border: 1px solid rgba(49, 51, 63, 0.2);
+                                        border-radius: 8px;
+                                        padding: 13px 13px;
+                                        heigth: 48px;
+                                        display: flex;
+                                        align-items: center;
+                                        overflow: hidden;
+                                        white-space: nowrap;
+                                        text-overflow: ellipsis;
+                                        background-color: rgba(255, 255, 255, 0.05);
+                                        font-size: 13px;
+                                    " title="{file.name}">
+                                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <b>{index}.</b> {file.name}
+                                        </span>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                            )
 
-                        for file in temp_files:
-
-                            st.caption(f"📄 {file.name}")
-
-                            # Boton para eliminar un archivo de la base de conocimiento
+                            #Boton para eliminar un archivo de la base de conocimiento
                             if st.button("❌", key=f"del_{file.name}"):
                                 file.unlink()
 
@@ -205,11 +231,11 @@ def main() -> None:
                                 st.cache_resource.clear()
                                 st.rerun()
 
-                    else:
-                        st.caption("No hay archivos pendientes en la carpeta temporal")
-
                 else:
-                    st.caption("La carpeta temporal no existe o esta vacia.")
+                    st.caption("No hay archivos pendientes en la carpeta temporal")
+
+            else:
+                st.caption("La carpeta temporal no existe o esta vacia.")
             
 
         ######################################################################################
@@ -218,7 +244,7 @@ def main() -> None:
 
         with st.container(horizontal_alignment="center"):
         
-            if st.button("Reiniciar conversacion", use_container_width=True):
+            if st.button("Reiniciar conversacion", use_container_width=True, type="primary"):
                 reset_chat()
                 st.rerun()
 
