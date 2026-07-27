@@ -65,45 +65,27 @@ def run_cache_agent(agent, question: str) -> str:
         "tools": tools
     }
 
-################################################################################################################
+@st.dialog("Subir nuevos documentos")
+def upload_files_menu(pdf_dir):
 
-def main() -> None:
+    st.info("Suba los archivos PDF a continuación para construir la base de conocimientos.")
 
-    st.set_page_config(page_title="Agente IA e-commerce", layout="centered")
+    with st.form("upload_form", clear_on_submit=True):
 
-    st.title("Agente de IA para E-commerce")
-    st.caption("Consulta documentos internos (RAG) y WEB")
-    st.markdown("---")
+        uploaded_files = st.file_uploader(label='',
+                                        label_visibility= "hidden", 
+                                        type=["pdf"],
+                                        accept_multiple_files=True
+                                        )
 
-    with st.sidebar:
-        st.header("Configuracion")
-
-        st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env ")
-
-        if st.button("Limpiar chat"):
-            reset_chat()
-            st.rerun()
-
-        st.markdown("---")
-
-        st.header("Documentos")
-
-        st.info("Suba los archivos PDF's a continuacion para construir la base de conocimientos")
-
-        #########################
-        
-        pdf_dir = _get_pdfs_dir()
-
-        #########################
-
-        uploaded_files = st.file_uploader(label='' ,type=["pdf"], accept_multiple_files=True)
-        submitted = st.button("Construir indice")
-
-        st.markdown("---")
-
-        st.header("Avisos")
+        col_left, col_center, col_right = st.columns([1,2,1])
+        with col_center:
+            submitted = st.form_submit_button("Construir indice", use_container_width=True)
 
         if uploaded_files and submitted:
+
+            st.markdown("---")
+            
             new_files = False
             unique_files = {}
 
@@ -133,6 +115,50 @@ def main() -> None:
 
             else:
                 st.warning(f"No se agrego ningun archivo nuevo")
+
+################################################################################################################
+
+def main() -> None:
+
+    st.set_page_config(page_title="Agente IA e-commerce", layout="centered")
+
+    st.title("Agente de IA para E-commerce")
+    st.caption("Consulta documentos internos (RAG) y WEB")
+    st.markdown("---")
+
+    with st.sidebar:
+        st.header("Configuracion")
+
+        st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env ")
+
+        if st.button("Limpiar chat"):
+            reset_chat()
+            st.rerun()
+
+        ######################################################################################
+
+        st.markdown("---")
+
+        with st.container():
+
+            top = st.container(horizontal=True, vertical_alignment="center")
+            
+            top.header("Documentos")
+
+            #########################
+            
+            pdf_dir = _get_pdfs_dir()
+
+            #########################
+
+            if top.button(r"$\textsf{\small ➕}$", key="open_uploader_menu", type="primary"):
+                upload_files_menu(pdf_dir)
+
+        ######################################################################################
+
+        st.markdown("---")
+
+        st.header("Avisos")
 
     ######################################################################################
     
