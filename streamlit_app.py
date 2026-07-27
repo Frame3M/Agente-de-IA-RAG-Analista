@@ -150,13 +150,10 @@ def main() -> None:
     st.markdown("---")
 
     with st.sidebar:
-        st.header("Configuracion")
+
+        st.title("Configuracion")
 
         st.info("Para poder realizar consultas deberas tener correctamente configuradas las variables de entorno en tu archivo .env ")
-
-        if st.button("Limpiar chat"):
-            reset_chat()
-            st.rerun()
 
         ######################################################################################
 
@@ -218,6 +215,12 @@ def main() -> None:
         ######################################################################################
 
         st.markdown("---")
+
+        with st.container(horizontal_alignment="center"):
+        
+            if st.button("Reiniciar conversacion", use_container_width=True):
+                reset_chat()
+                st.rerun()
 
 
     ######################################################################################
