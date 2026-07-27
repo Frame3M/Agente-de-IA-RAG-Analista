@@ -172,24 +172,47 @@ def main() -> None:
 
             top = st.container(horizontal=True, vertical_alignment="center")
 
+            # Titulo y boton para añadir documentos
             with top:
-                st.header("Documentos")
+                st.title("Documentos")
 
-                if st.button(r"$\textsf{\small ➕}$", key="open_uploader_menu", type="primary"):
+                if st.button("➕", key="open_uploader_menu", type="primary"):
                     upload_files_menu(pdf_dir)
 
-            if pdf_dir.exists():
-                temp_files = list(pdf_dir.glob("*.pdf"))
+            sub = st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute")
 
-                if temp_files:
-                    for file in temp_files:
-                        st.caption(f"📄 {file.name}")
+            # Seccion lista documentos
+            with sub:
+
+                if pdf_dir.exists():
+
+                    temp_files = sorted(pdf_dir.glob("*.pdf"))
+
+                    if temp_files:
+
+                        for file in temp_files:
+
+                            st.caption(f"📄 {file.name}")
+
+                            # Boton para eliminar un archivo de la base de conocimiento
+                            if st.button("❌", key=f"del_{file.name}"):
+                                file.unlink()
+
+                                with st.spinner("Reconstruyendo indice..."):
+                                    try:
+                                        build_agent(rebuild_index=True)
+
+                                    except Exception:
+                                        pass
+
+                                st.cache_resource.clear()
+                                st.rerun()
+
+                    else:
+                        st.caption("No hay archivos pendientes en la carpeta temporal")
 
                 else:
-                    st.caption("No hay archivos pendientes en la carpeta temporal")
-
-            else:
-                st.caption("La carpeta temporal no existe o esta vacia.")
+                    st.caption("La carpeta temporal no existe o esta vacia.")
             
 
         ######################################################################################
