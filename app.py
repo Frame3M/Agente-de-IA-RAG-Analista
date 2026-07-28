@@ -11,7 +11,7 @@ from langchain_classic.agents import AgentExecutor, create_react_agent
 from herramientas import crear_herramientas
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-DEFAULT_PDF_DIR = PROJECT_ROOT / "sandbox_files"
+DEFAULT_PDF_DIR = PROJECT_ROOT / "files"
 DEFAULT_INDEX_DIR = PROJECT_ROOT / "data" / "faiss_index"
 
 load_dotenv()
@@ -60,7 +60,7 @@ def _get_pdfs_dir() -> Path:
 
     if not pdfs_dir.exists():
 
-        raise FileNotFoundError(f"No existe la carpeta para archivos pdf: {pdfs_dir}")
+        pdfs_dir.mkdir(parents=True, exist_ok=True)
     
     return pdfs_dir
 
@@ -92,6 +92,7 @@ def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, re
     chunks = splitter.split_documents(pdf_docs)
 
     vectorstore = FAISS.from_documents(documents= chunks, embedding= embedding_model)
+    index_dir.mkdir(parents=True, exist_ok=True)
     vectorstore.save_local(index_dir)
 
     return vectorstore
