@@ -72,6 +72,8 @@ python app.py
 streamlit run streamlit_app.py
 ```
 
+**ADVERTENCIA!** : Para poder usar la funcioanalidad RAG mediante CLI se debe disponer de una carpeta `/files` en la carpeta raiz del proyecto, en la cual se deben depositar los documentos para la base de conocimiento. 
+
 ---
 
 # Ejemplos de preguntas y respuestas
