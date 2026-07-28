@@ -13,6 +13,13 @@ El agente es capaz de razonar y decidir dinámicamente qué herramienta utilizar
 * **Búsqueda Web en tiempo real:** Utiliza motores de búsqueda para responder sobre precios actuales, noticias o eventos actualizados.
 * **Transparencia en respuestas:** Indica en la interfaz qué herramienta/fuente fue consultada para dar cada respuesta.
 
+> 🚀 **Aplicación en vivo:** [Agente-RAG](https://agente-rag-ecommerce.streamlit.app/)
+
+
+https://github.com/user-attachments/assets/5c8feeb8-d27a-454d-a0e3-280c48cfaed9
+
+---
+
 ### 🛠️ Tecnologías Utilizadas
 
 * **Lenguaje:** Python
