@@ -1,9 +1,7 @@
 import os
 from pathlib import Path
 import streamlit as st
-from app import PROJECT_ROOT, build_agent
-
-DEFAULT_TEMPFILES_DIR = PROJECT_ROOT / "temp_files"
+from app import PROJECT_ROOT, build_agent, DEFAULT_PDF_DIR
 
 ####################################################
 
@@ -25,7 +23,7 @@ sync_secrets()
 def _get_pdfs_dir() -> Path:
 
     configured = os.getenv("PDF_DIR")
-    pdf_dir = Path(configured) if configured else DEFAULT_TEMPFILES_DIR
+    pdf_dir = Path(configured) if configured else DEFAULT_PDF_DIR
     
     if not pdf_dir.is_absolute():
         pdf_dir = (PROJECT_ROOT / pdf_dir).resolve()
