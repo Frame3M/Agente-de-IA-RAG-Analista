@@ -9,7 +9,13 @@ def consultar_rag(query: str, vectorstore) -> str:
     de una base de conocimiento privada, como politicas de la empresa o datos internos.
     """
 
+    if vectorstore is None:
+        return "Actualmente no hay ningún documento subido en la base de conocimientos interna."
+
     docs = vectorstore.similarity_search(query= query, k= 4)
+
+    if not docs:
+        return "No se encontró información relevante en los documentos internos."
 
     fragmentos_limpios = []
     for i, doc in enumerate(docs):

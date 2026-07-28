@@ -26,7 +26,7 @@ def _load_pdfs(pdf_dir: Path):
     pdf_files = sorted(pdf_dir.glob("*.pdf"))
 
     if not pdf_files:
-        raise RuntimeError(f"No se encontraron archivos PDF en {pdf_dir}")
+        return []
     
     docs = []
 
@@ -83,6 +83,10 @@ def _build_or_load_vectorstore(embedding_model: GoogleGenerativeAIEmbeddings, re
     
     pdfs_dir = _get_pdfs_dir()
     pdf_docs = _load_pdfs(pdfs_dir)
+
+    if not pdf_docs:
+        print("No hay documentos PDF cargados para indexar.")
+        return None
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
